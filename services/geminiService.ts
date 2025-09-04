@@ -17,7 +17,10 @@ const mockAnalyzeReport = async (description: string): Promise<AnalyzedReport> =
     return {
         category: categories[Math.floor(Math.random() * categories.length)],
         severity: severities[Math.floor(Math.random() * severities.length)],
-        summary: "Análisis simulado: El reporte detalla una posible irregularidad que requiere atención."
+        summary: "Análisis simulado: El reporte detalla una posible irregularidad que requiere atención.",
+        keyDates: ["Última quincena"],
+        locations: ["Área de producción"],
+        involvedParties: ["Gerente", "Compañeros"]
     };
 }
 
@@ -29,7 +32,7 @@ export const analyzeReport = async (description: string): Promise<AnalyzedReport
     try {
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
-            contents: `Eres un analista de seguridad para una organización de derechos de los trabajadores sindicalizados. Analiza el siguiente reporte anónimo. Basado en el texto, proporciona una categoría, un nivel de severidad (Baja, Media, Alta, Crítica) y un resumen conciso para revisión interna. No incluyas ninguna información de identificación en tu resumen. El reporte del usuario es: "${description}"`,
+            contents: `Eres un analista de seguridad para una organización de derechos de los trabajadores sindicalizados. Analiza el siguiente reporte anónimo. Basado en el texto, extrae: 1. Una categoría. 2. Un nivel de severidad (Baja, Media, Alta, Crítica). 3. Un resumen conciso para revisión interna. 4. Una lista de fechas o periodos clave mencionados (ej. "la última quincena", "ayer"). 5. Una lista de lugares o áreas mencionadas (ej. "el área de soldadura", "el departamento de ensamblaje"). 6. Una lista de las partes involucradas (ej. "un gerente de turno", "compañeros", "el departamento de RRHH", pero NUNCA nombres propios para mantener el anonimato). Si un campo no aplica, devuelve un array vacío. No incluyas ninguna información de identificación en tu resumen. El reporte del usuario es: "${description}"`,
             config: {
                 responseMimeType: "application/json",
                 responseSchema: {
@@ -47,8 +50,23 @@ export const analyzeReport = async (description: string): Promise<AnalyzedReport
                             type: Type.STRING,
                             description: 'Un resumen breve y neutral del problema.',
                         },
+                        keyDates: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING },
+                            description: 'Fechas o periodos de tiempo mencionados en el reporte, como "la última quincena" o "ayer".'
+                        },
+                        locations: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING },
+                            description: 'Lugares, departamentos o áreas físicas mencionadas, como "área de soldadura".'
+                        },
+                        involvedParties: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING },
+                            description: 'Roles o grupos de personas involucradas, como "gerente" o "compañeros", pero sin nombres propios.'
+                        }
                     },
-                    required: ['category', 'severity', 'summary']
+                    required: ['category', 'severity', 'summary', 'keyDates', 'locations', 'involvedParties']
                 },
             },
         });

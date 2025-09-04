@@ -4,9 +4,11 @@ import { LockIcon } from './icons/LockIcon';
 import { UploadIcon } from './icons/UploadIcon';
 import { FileTextIcon } from './icons/FileTextIcon';
 import { MicIcon } from './icons/MicIcon';
+import type { ReportData } from '../types';
+import { ReportStatus } from '../types';
 
 interface ReportFormProps {
-    onSubmitted: (trackingId: string) => void;
+    onSubmitted: (report: ReportData) => void;
 }
 
 const commonReportTypes = [
@@ -35,9 +37,54 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSubmitted }) => {
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
-            setFiles(prevFiles => [...prevFiles, ...Array.from(event.target.files!)]);
+            const newFiles = Array.from(event.target.files);
+            const allowedDocTypes = ['.pdf', '.doc', '.docx', '.txt'];
+            const allowedAudioTypes = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/x-m4a'];
+            const allowedVisualTypes = ['image/jpeg', 'image/png', 'image/gif', 'video/mp4', 'video/quicktime', 'video/x-matroska'];
+            
+            const acceptedFiles: File[] = [];
+            let validationError = '';
+
+            newFiles.forEach(file => {
+                let isValid = false;
+                const fileExtension = `.${file.name.split('.').pop()?.toLowerCase()}`;
+
+                if (event.target.accept.includes('audio')) {
+                    isValid = allowedAudioTypes.includes(file.type);
+                } else if (event.target.accept.includes('image') || event.target.accept.includes('video')) {
+                    isValid = allowedVisualTypes.includes(file.type);
+                } else { // Documents
+                    isValid = allowedDocTypes.includes(fileExtension);
+                }
+
+                if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                    validationError = `El archivo "${file.name}" excede el límite de 10MB.`;
+                    isValid = false;
+                }
+                
+                if (isValid) {
+                    acceptedFiles.push(file);
+                } else if (!validationError) {
+                     validationError = `El tipo de archivo "${file.name}" no es válido.`;
+                }
+            });
+            
+            if (validationError) {
+                setError(validationError);
+            } else {
+                 setError(null);
+            }
+
+            if(acceptedFiles.length > 0) {
+                 setFiles(prevFiles => {
+                     const existingFileNames = new Set(prevFiles.map(f => f.name));
+                     const trulyNewFiles = acceptedFiles.filter(f => !existingFileNames.has(f.name));
+                     return [...prevFiles, ...trulyNewFiles];
+                 });
+            }
         }
     };
+
 
     const removeFile = (fileName: string) => {
         setFiles(prevFiles => prevFiles.filter(file => file.name !== fileName));
@@ -65,16 +112,25 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSubmitted }) => {
         try {
             // Simulate report analysis
             const analysisResult = await analyzeReport(description);
-            console.log("Report Analysis Result:", analysisResult);
-
-            // Generate a unique tracking ID
+            
             const trackingId = generateTrackingId();
+            const finalTitle = reportType === 'Otro' ? otherTitle.trim() : reportType;
+
+            const newReport: ReportData = {
+                id: trackingId,
+                title: finalTitle,
+                description: description.trim(),
+                files,
+                status: ReportStatus.RECIBIDO,
+                analysis: analysisResult,
+                timestamp: new Date().toISOString(),
+                internalNotes: [],
+            };
             
             // In a real app, you would now upload the report data and files to a secure server.
-            // For this simulation, we'll just proceed to the success screen.
             
             setTimeout(() => { // Simulate network delay
-              onSubmitted(trackingId);
+              onSubmitted(newReport);
             }, 500);
 
         } catch (e) {
@@ -109,6 +165,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSubmitted }) => {
                             }
                         }}
                         className="w-full bg-[#374151] border border-[#4a5568] rounded-md p-2 text-slate-200 focus:ring-2 focus:ring-[#d69e2e] focus:border-[#d69e2e] transition"
+                        aria-required="true"
                     >
                         {commonReportTypes.map(type => (
                             <option key={type} value={type} disabled={type === commonReportTypes[0]}>
@@ -143,11 +200,12 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSubmitted }) => {
                         className="w-full bg-[#374151] border border-[#4a5568] rounded-md p-2 text-slate-200 focus:ring-2 focus:ring-[#d69e2e] focus:border-[#d69e2e] transition"
                         placeholder="Describa la situación con el mayor detalle posible. Incluya fechas, lugares y personas involucradas si es posible, sin revelar su identidad."
                         required
+                        aria-required="true"
                     />
                 </div>
 
                 <div>
-                    <span className="block text-sm font-medium text-slate-300 mb-2">Adjuntar Evidencia (Opcional)</span>
+                    <span className="block text-sm font-medium text-slate-300 mb-2">Adjuntar Evidencia (Opcional, máx 10MB por archivo)</span>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <input type="file" ref={docInputRef} onChange={handleFileChange} className="hidden" accept=".pdf,.doc,.docx,.txt" multiple />
                         <button type="button" onClick={() => docInputRef.current?.click()} className="flex items-center justify-center gap-2 w-full bg-[#374151] hover:bg-[#4a5568] text-slate-300 font-medium py-2 px-4 rounded-md transition">
@@ -159,7 +217,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSubmitted }) => {
                             <MicIcon className="w-5 h-5" /> Audio
                         </button>
                         
-                        <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*,.mp4,.mov" multiple />
+                        <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*,video/*" multiple />
                          <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center justify-center gap-2 w-full bg-[#374151] hover:bg-[#4a5568] text-slate-300 font-medium py-2 px-4 rounded-md transition">
                             <UploadIcon className="w-5 h-5" /> Imagen/Video
                         </button>
@@ -169,22 +227,22 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSubmitted }) => {
                 {files.length > 0 && (
                     <div className="space-y-2">
                         <h3 className="text-sm font-medium text-slate-300">Archivos adjuntos:</h3>
-                        <ul className="space-y-1">
+                        <ul className="space-y-1" aria-label="Lista de archivos adjuntos">
                             {files.map(file => (
                                 <li key={file.name} className="flex items-center justify-between bg-[#374151] p-2 rounded-md text-sm">
                                     <span className="text-slate-300 truncate pr-2">{file.name}</span>
-                                    <button onClick={() => removeFile(file.name)} className="text-red-400 hover:text-red-300 font-bold">&times;</button>
+                                    <button onClick={() => removeFile(file.name)} className="text-red-400 hover:text-red-300 font-bold" aria-label={`Quitar archivo ${file.name}`}>&times;</button>
                                 </li>
                             ))}
                         </ul>
                     </div>
                 )}
 
-                {error && <p className="text-[#e9b54f] text-sm">{error}</p>}
+                {error && <p role="alert" className="text-[#e9b54f] text-sm">{error}</p>}
                 
                 <button
                     type="submit"
-                    disabled={isLoading || !description.trim()}
+                    disabled={isLoading || !description.trim() || (reportType !== 'Otro' && reportType === commonReportTypes[0]) || (reportType === 'Otro' && !otherTitle.trim())}
                     className="w-full flex items-center justify-center gap-3 bg-[#d69e2e] hover:bg-[#b88a2a] disabled:bg-[#9a7224] disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-md transition-colors duration-300"
                 >
                     {isLoading ? (

@@ -13,6 +13,53 @@
       body {
         font-family: 'Inter', sans-serif;
       }
+      @media print {
+        body {
+          background-color: white !important;
+          color: black !important;
+        }
+        header, footer, #dashboard-filters, #dashboard-actions, .no-print {
+          display: none !important;
+        }
+        main, #root, #dashboard-container {
+          padding: 0 !important;
+          margin: 0 !important;
+          max-width: 100% !important;
+          box-shadow: none !important;
+          background-color: transparent !important;
+        }
+        #dashboard-container h2, #dashboard-container p {
+            color: black !important;
+        }
+        .printable-table-container {
+            overflow: visible !important;
+        }
+        #dashboard-table {
+          width: 100%;
+          font-size: 10px;
+          break-inside: auto;
+        }
+        #dashboard-table tr {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        #dashboard-table th, #dashboard-table td {
+           border: 1px solid #ccc;
+           padding: 4px;
+           color: black !important;
+           background-color: white !important;
+        }
+        #dashboard-table th {
+            background-color: #eee !important;
+        }
+        .status-badge, .severity-badge {
+            background-color: transparent !important;
+            color: black !important;
+            border: 1px solid #ddd;
+            padding: 1px 3px !important;
+            font-weight: normal !important;
+        }
+      }
     </style>
   <script type="importmap">
 {

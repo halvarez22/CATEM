@@ -1,21 +1,13 @@
-import React, { useState, useMemo } from 'react';
-import { ReportStatus } from '../types';
+import React, { useState } from 'react';
+import { ReportStatus, ReportData } from '../types';
 import StatusDisplay from './StatusDisplay';
 import { SearchIcon } from './icons/SearchIcon';
 
-// Mock function to simulate fetching report status
-const getMockStatus = (trackingId: string): ReportStatus | null => {
-    if (!trackingId.startsWith("CATEM-") || trackingId.length < 12) return null;
-    
-    // Simple logic to return a status based on the ID's last character
-    const lastChar = trackingId.charCodeAt(trackingId.length - 1);
-    const statuses = Object.values(ReportStatus);
-    const index = lastChar % statuses.length;
-    return statuses[index];
+interface TrackReportProps {
+    reports: ReportData[];
 }
 
-
-const TrackReport: React.FC = () => {
+const TrackReport: React.FC<TrackReportProps> = ({ reports }) => {
     const [trackingId, setTrackingId] = useState('');
     const [status, setStatus] = useState<ReportStatus | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -30,11 +22,10 @@ const TrackReport: React.FC = () => {
             return;
         }
 
-        // Simulate API call
-        const foundStatus = getMockStatus(trackingId.trim());
+        const foundReport = reports.find(r => r.id.toLowerCase() === trackingId.trim().toLowerCase());
         
-        if(foundStatus) {
-            setStatus(foundStatus);
+        if(foundReport) {
+            setStatus(foundReport.status);
             setError(null);
         } else {
             setStatus(null);
@@ -56,9 +47,12 @@ const TrackReport: React.FC = () => {
                     onChange={(e) => {
                         setTrackingId(e.target.value);
                         setSearched(false);
+                        setError(null);
+                        setStatus(null);
                     }}
                     className="flex-grow w-full bg-[#374151] border border-[#4a5568] rounded-md p-3 text-slate-200 focus:ring-2 focus:ring-[#d69e2e] focus:border-[#d69e2e] transition font-mono"
                     placeholder="CATEM-XXXXXX-XXXX"
+                    aria-label="ID de seguimiento"
                 />
                 <button
                     type="submit"
@@ -72,10 +66,12 @@ const TrackReport: React.FC = () => {
             {searched && (
                 <div className="mt-8">
                     {error && (
-                        <p className="text-center text-[#e9b54f] bg-[#d69e2e]/20 p-3 rounded-md">{error}</p>
+                        <p role="alert" className="text-center text-[#e9b54f] bg-[#d69e2e]/20 p-3 rounded-md">{error}</p>
                     )}
                     {status && (
-                        <StatusDisplay currentStatus={status} />
+                        <div className="animate-fade-in-slow">
+                             <StatusDisplay currentStatus={status} />
+                        </div>
                     )}
                 </div>
             )}

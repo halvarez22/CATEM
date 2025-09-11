@@ -1,4 +1,4 @@
-export type View = 'form' | 'success' | 'track' | 'dashboard' | 'managerialDashboard' | 'login';
+export type View = 'form' | 'success' | 'track' | 'dashboard' | 'managerialDashboard' | 'login' | 'map';
 
 export enum ReportStatus {
     RECIBIDO = "Recibido",
@@ -13,6 +13,7 @@ export interface Report {
     title: string;
     description: string;
     files: File[];
+    state: string;
 }
 
 export interface AnalyzedReport {

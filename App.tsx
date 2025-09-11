@@ -34,6 +34,7 @@ const App: React.FC = () => {
               description: 'Este es un reporte simulado para demostrar la funcionalidad de notificaciones.',
               files: [],
               status: ReportStatus.RECIBIDO,
+              state: 'Ciudad de México',
               analysis: {
                 category: 'Prueba',
                 severity: 'Baja',

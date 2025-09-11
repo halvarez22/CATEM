@@ -1,9 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { ReportData } from '../types';
 import { ReportStatus } from '../types';
 import type { DashboardFilters } from '../App';
 import KPICard from './KPICard';
 import SimpleBarChart from './charts/SimpleBarChart';
+import RealMexicoMap from './RealMexicoMap';
+import StateReports from './StateReports';
+import ReportDetail from './ReportDetail';
 
 // Icons for KPIs
 import { FolderIcon, FolderOpenIcon, CheckBadgeIcon, ClockIcon } from './icons/KPIIcons';
@@ -33,6 +36,9 @@ const severityColors: Record<string, string> = {
 const categoryColors = [ '#38bdf8', '#fb923c', '#a78bfa', '#f472b6', '#4ade80', '#fbbf24'];
 
 const ManagerialDashboard: React.FC<ManagerialDashboardProps> = ({ reports, onDrillDown }) => {
+    const [currentView, setCurrentView] = useState<'overview' | 'map' | 'state-reports' | 'report-detail'>('overview');
+    const [selectedState, setSelectedState] = useState<{id: string, name: string, reports: ReportData[]} | null>(null);
+    const [selectedReport, setSelectedReport] = useState<ReportData | null>(null);
     
     const kpiData = useMemo(() => {
         const closedStatuses = [ReportStatus.RESUELTO, ReportStatus.CERRADO, ReportStatus.NO_PROCEDE];
@@ -99,11 +105,93 @@ const ManagerialDashboard: React.FC<ManagerialDashboardProps> = ({ reports, onDr
         return { statusData, categoryData, severityData };
     }, [reports]);
 
+    const handleStateClick = (stateId: string, stateName: string, stateReports: ReportData[]) => {
+        setSelectedState({ id: stateId, name: stateName, reports: stateReports });
+        setCurrentView('state-reports');
+    };
+
+    const handleBackToMap = () => {
+        setCurrentView('map');
+        setSelectedState(null);
+    };
+
+    const handleBackToOverview = () => {
+        setCurrentView('overview');
+        setSelectedState(null);
+        setSelectedReport(null);
+    };
+
+    const handleBackToStateReports = () => {
+        setCurrentView('state-reports');
+        setSelectedReport(null);
+    };
+
+    const handleReportClick = (report: ReportData) => {
+        setSelectedReport(report);
+        setCurrentView('report-detail');
+    };
+
+    const handleUpdateReport = (updatedReport: ReportData) => {
+        // Aquí podrías implementar la actualización del reporte en el estado global
+        console.log('Report updated:', updatedReport);
+        // Por ahora, solo regresamos a la vista de reportes del estado
+        handleBackToStateReports();
+    };
+
+    if (currentView === 'report-detail' && selectedReport) {
+        return (
+            <ReportDetail
+                report={selectedReport}
+                onUpdateReport={handleUpdateReport}
+                onBack={handleBackToStateReports}
+            />
+        );
+    }
+
+    if (currentView === 'state-reports' && selectedState) {
+        return (
+            <StateReports
+                stateName={selectedState.name}
+                reports={selectedState.reports}
+                onBack={handleBackToMap}
+                onReportClick={handleReportClick}
+            />
+        );
+    }
+
+    if (currentView === 'map') {
+        return (
+            <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                    <button 
+                        onClick={handleBackToOverview}
+                        className="text-[#d69e2e] hover:text-[#e9b54f] font-semibold"
+                    >
+                        &larr; Volver al Dashboard
+                    </button>
+                    <h2 className="text-3xl font-bold text-slate-100">Análisis Geográfico</h2>
+                </div>
+                <RealMexicoMap 
+                    reports={reports} 
+                    onStateClick={handleStateClick}
+                />
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-8 animate-fade-in">
-             <div>
-                <h2 className="text-3xl font-bold text-slate-100">Dashboard Gerencial</h2>
-                <p className="text-md text-slate-400 mt-1">Análisis y monitoreo de la atención a quejas.</p>
+             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h2 className="text-3xl font-bold text-slate-100">Dashboard Gerencial</h2>
+                    <p className="text-md text-slate-400 mt-1">Análisis y monitoreo de la atención a quejas.</p>
+                </div>
+                <button
+                    onClick={() => setCurrentView('map')}
+                    className="flex items-center gap-2 bg-[#d69e2e] hover:bg-[#b88a2a] text-white font-bold py-2 px-4 rounded-md transition-colors duration-300"
+                >
+                    🗺️ Ver Mapa de Calor
+                </button>
             </div>
             
             {/* KPI Cards */}

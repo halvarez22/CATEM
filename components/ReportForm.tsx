@@ -6,6 +6,7 @@ import { FileTextIcon } from './icons/FileTextIcon';
 import { MicIcon } from './icons/MicIcon';
 import type { ReportData } from '../types';
 import { ReportStatus } from '../types';
+import { mexicanStates } from '../data/mexicanStates';
 
 interface ReportFormProps {
     onSubmitted: (report: ReportData) => void;
@@ -23,10 +24,16 @@ const commonReportTypes = [
     "Otro",
 ];
 
+const stateOptions = [
+    "Seleccione su estado...",
+    ...mexicanStates.map(state => state.name).sort()
+];
+
 const ReportForm: React.FC<ReportFormProps> = ({ onSubmitted }) => {
     const [reportType, setReportType] = useState(commonReportTypes[0]);
     const [otherTitle, setOtherTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [selectedState, setSelectedState] = useState(stateOptions[0]);
     const [files, setFiles] = useState<File[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -45,7 +52,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSubmitted }) => {
             const acceptedFiles: File[] = [];
             let validationError = '';
 
-            newFiles.forEach(file => {
+            newFiles.forEach((file: File) => {
                 let isValid = false;
                 const fileExtension = `.${file.name.split('.').pop()?.toLowerCase()}`;
 
@@ -101,6 +108,10 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSubmitted }) => {
             setError("Cuando selecciona 'Otro', debe especificar un título para el reporte.");
             return;
         }
+        if (selectedState === stateOptions[0]) {
+            setError("Por favor, seleccione su estado.");
+            return;
+        }
         if (!description.trim()) {
             setError("La descripción detallada es obligatoria.");
             return;
@@ -121,6 +132,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSubmitted }) => {
                 title: finalTitle,
                 description: description.trim(),
                 files,
+                state: selectedState,
                 status: ReportStatus.RECIBIDO,
                 analysis: analysisResult,
                 timestamp: new Date().toISOString(),
@@ -191,6 +203,23 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSubmitted }) => {
                 )}
 
                 <div>
+                    <label htmlFor="state" className="block text-sm font-medium text-slate-300 mb-1">Estado (*)</label>
+                    <select
+                        id="state"
+                        value={selectedState}
+                        onChange={(e) => setSelectedState(e.target.value)}
+                        className="w-full bg-[#374151] border border-[#4a5568] rounded-md p-2 text-slate-200 focus:ring-2 focus:ring-[#d69e2e] focus:border-[#d69e2e] transition"
+                        aria-required="true"
+                    >
+                        {stateOptions.map(state => (
+                            <option key={state} value={state} disabled={state === stateOptions[0]}>
+                                {state}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                <div>
                     <label htmlFor="description" className="block text-sm font-medium text-slate-300 mb-1">Descripción Detallada (*)</label>
                     <textarea
                         id="description"
@@ -242,7 +271,7 @@ const ReportForm: React.FC<ReportFormProps> = ({ onSubmitted }) => {
                 
                 <button
                     type="submit"
-                    disabled={isLoading || !description.trim() || (reportType !== 'Otro' && reportType === commonReportTypes[0]) || (reportType === 'Otro' && !otherTitle.trim())}
+                    disabled={isLoading || !description.trim() || (reportType !== 'Otro' && reportType === commonReportTypes[0]) || (reportType === 'Otro' && !otherTitle.trim()) || selectedState === stateOptions[0]}
                     className="w-full flex items-center justify-center gap-3 bg-[#d69e2e] hover:bg-[#b88a2a] disabled:bg-[#9a7224] disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-md transition-colors duration-300"
                 >
                     {isLoading ? (

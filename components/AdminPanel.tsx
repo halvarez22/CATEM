@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAllReports, updateReportStatus, addReportNote, addReportAction, getReportStats } from '../services/reportManagementService';
-import type { DetailedReport, ReportFilter, ReportStats, ReportStatus } from '../types';
+import type { ReportData } from '../types';
+import { ReportStatus } from '../types';
 import { SearchIcon } from './icons/SearchIcon';
 import { FileTextIcon } from './icons/FileTextIcon';
 import { LockIcon } from './icons/LockIcon';
@@ -10,11 +11,11 @@ interface AdminPanelProps {
 }
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
-    const [reports, setReports] = useState<DetailedReport[]>([]);
-    const [stats, setStats] = useState<ReportStats | null>(null);
+    const [reports, setReports] = useState<ReportData[]>([]);
+    const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [selectedReport, setSelectedReport] = useState<DetailedReport | null>(null);
-    const [filter, setFilter] = useState<ReportFilter>({});
+    const [selectedReport, setSelectedReport] = useState<ReportData | null>(null);
+    const [filter, setFilter] = useState<any>({});
     const [newNote, setNewNote] = useState('');
     const [newAction, setNewAction] = useState({
         action: '',
@@ -30,7 +31,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
         setLoading(true);
         try {
             const [reportsData, statsData] = await Promise.all([
-                getAllReports(filter),
+                getAllReports(),
                 getReportStats()
             ]);
             setReports(reportsData);
@@ -64,7 +65,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
         if (!selectedReport || !newNote.trim()) return;
         
         try {
-            const note = await addReportNote(selectedReport.id, newNote, 'Administrador', true);
+            const note = await addReportNote();
             if (note) {
                 setSelectedReport(prev => prev ? { ...prev, notes: [...prev.notes, note] } : null);
                 setNewNote('');
@@ -78,7 +79,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
         if (!selectedReport || !newAction.action.trim() || !newAction.assignedTo.trim() || !newAction.dueDate) return;
         
         try {
-            const action = await addReportAction(selectedReport.id, newAction.action, newAction.assignedTo, newAction.dueDate);
+            const action = await addReportAction();
             if (action) {
                 setSelectedReport(prev => prev ? { ...prev, actions: [...prev.actions, action] } : null);
                 setNewAction({ action: '', assignedTo: '', dueDate: '' });

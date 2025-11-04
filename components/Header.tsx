@@ -1,6 +1,5 @@
 import React from 'react';
 import type { View } from '../types';
-import { CatemLogo } from './icons/CatemLogo';
 import { ShieldCheckIcon } from './icons/ShieldCheckIcon';
 import { ChartBarIcon } from './icons/ChartBarIcon';
 import { LoginIcon } from './icons/LoginIcon';
@@ -21,9 +20,13 @@ const Header: React.FC<HeaderProps> = ({ onNavigate, currentView, isAuthenticate
     };
     
     return (
-        <header className="flex flex-col sm:flex-row justify-between items-center w-full pb-4 border-b border-[#374151]">
-            <div className="flex items-center gap-4 mb-4 sm:mb-0 cursor-pointer" onClick={() => onNavigate('form')}>
-                <CatemLogo className="w-12 h-12" />
+        <header className="flex flex-col sm:flex-row justify-between items-center w-full h-16 border-b border-[#374151] overflow-visible relative">
+            <div className="flex items-center gap-4 mb-4 sm:mb-0 cursor-pointer overflow-visible" onClick={() => onNavigate('form')}>
+                <img 
+                    src="/images/logo_catem.png" 
+                    alt="Logo CATEM" 
+                    className="h-28 w-auto object-contain"
+                />
                 <h1 className="text-2xl font-bold text-slate-100">Canal de Denuncias CATEM</h1>
             </div>
             <nav className="flex items-center gap-2 flex-wrap justify-center">
